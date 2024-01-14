@@ -20,6 +20,12 @@ struct zhiwu {
 	int frameIndex;//序列帧序号
 };
 
+struct sunshineBall {
+	int x, y;
+	int frameIndex;//序列帧 
+
+};
+
 struct zhiwu map[3][9];
 
 bool fileExist(const char* name) {
@@ -144,8 +150,34 @@ void updateGame() {
 	}
 }
 
+void startUI() {
+	IMAGE imgBg, imgMenu1, imgMenu2;
+	loadimage(&imgBg, "res/res/menu.png");
+	loadimage(&imgMenu1, "res/res/menu1.png");
+	loadimage(&imgMenu2, "res/res/menu2.png");
+	int flag = 0;
+
+	while (1) {
+		BeginBatchDraw();
+		putimage(0, 0, &imgBg);
+		putimagePNG(474, 75, flag ? &imgMenu2 : &imgMenu1);
+
+		ExMessage msg;
+		if (peekmessage(&msg)) {
+			if (msg.message == WM_LBUTTONDOWN && msg.x > 474 && msg.x < (474 + 300) && msg.y>75 && msg.y < (75 + 140)) {
+				flag = 1;
+			}
+			else if (msg.message == WM_LBUTTONUP && flag) {
+				return;
+			}
+		}
+		EndBatchDraw();
+	}
+}
+
 int main(void) {
 	gameInit();
+	startUI();
 	int timer = 0;
 	bool flag = true;
 	while (1) {
