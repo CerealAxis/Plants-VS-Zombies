@@ -76,12 +76,6 @@ void updateWindow() {
 		putimage(x, y, &imgCards[i]);
 	}
 
-	//渲染拖动过程
-	if (curZhiWu > 0) {
-		IMAGE* img = imgZhiWu[curZhiWu - 1][0];
-		putimagePNG(curX - img->getwidth() / 2.0, curY - img->getheight() / 2.0, img);
-	}
-
 	//渲染种植的植物
 	for (int i = 0; i < 3; i++) {
 		for (int j = 0; j < 9; j++) {
@@ -93,6 +87,12 @@ void updateWindow() {
 				putimagePNG(x, y, imgZhiWu[zhiwuType][index]);
 			}
 		}
+	}
+
+	//渲染拖动过程
+	if (curZhiWu > 0) {
+		IMAGE* img = imgZhiWu[curZhiWu - 1][0];
+		putimagePNG(curX - img->getwidth() / 2.0, curY - img->getheight() / 2.0, img);
 	}
 
 	EndBatchDraw();
@@ -146,11 +146,20 @@ void updateGame() {
 
 int main(void) {
 	gameInit();
+	int timer = 0;
+	bool flag = true;
 	while (1) {
 		userClick();
-		updateWindow();
-		updateGame();
-		Sleep(2);
+		timer += getDelay();
+		if (timer > 40) {
+			flag = true;
+			timer = 0;
+		}
+		if (flag) {
+			flag = false;
+			updateWindow();
+			updateGame();
+		}
 	}
 	system("pause");
 	return 0;
