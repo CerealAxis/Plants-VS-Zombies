@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <graphics.h>
+#include <time.h>
 #include "tools.h"
 
 #define WIN_WIDTH 900
@@ -23,8 +24,12 @@ struct zhiwu {
 struct sunshineBall {
 	int x, y;
 	int frameIndex;//序列帧 
-
+	int destY;//目标Y坐标
+	bool used;
+	int timer;
 };
+struct sunshineBall balls[10];
+IMAGE imgSunshineBall[29];
 
 struct zhiwu map[3][9];
 
@@ -65,6 +70,17 @@ void gameInit() {
 		}
 	}
 	curZhiWu = 0;
+
+	//加载阳光
+	memset(balls, 0, sizeof(balls));
+	for (int i = 0; i < 29; i++) {
+		sprintf_s(name, sizeof(name), "res/res/sunshine/%d.png", i + 1);
+		loadimage(&imgSunshineBall[i], name);
+	}
+
+	//配置随机数
+	srand(time(NULL));
+
 	//创建游戏窗口
 	initgraph(WIN_WIDTH, WIN_HEIGHT, 1);
 }
@@ -101,6 +117,14 @@ void updateWindow() {
 		putimagePNG(curX - img->getwidth() / 2.0, curY - img->getheight() / 2.0, img);
 	}
 
+	int ballMax = sizeof(balls) / sizeof(balls[0]);
+	for (int i = 0; i < ballMax; i++) {
+		if (balls[i].used) {
+			IMAGE* img = &imgSunshineBall[balls[i].frameIndex];
+			putimagePNG(balls[i].x, balls[i].y, img);
+		}
+	}
+
 	EndBatchDraw();
 }
 
@@ -134,6 +158,47 @@ void userClick() {
 		}
 	}
 }
+void createSunshine() {
+	static int count = 0;
+	static int fre = 400;
+	count++;
+	if (count >= fre) {
+		fre = 200 + rand() % 200;
+		count = 0;
+		int ballMax = sizeof(balls) / sizeof(balls[0]);
+		int i;
+		for (i = 0; i < ballMax && balls[i].used; i++);
+		if (i >= ballMax) {
+			return;
+		}
+
+		balls[i].used = true;
+		balls[i].frameIndex = 0;
+		balls[i].x = 260 + rand() % (900 - 260);//260-900
+		balls[i].y = 60;
+		balls[i].destY = 200 + (rand() % 4) * 90;
+		balls[i].timer = 0;
+	}
+
+}
+
+void updateSunshine() {
+	int ballMax = sizeof(balls) / sizeof(balls[0]);
+	for (int i = 0; i < ballMax; i++) {
+		if (balls[i].used) {
+			balls[i].frameIndex = (balls[i].frameIndex + 1) % 29;
+			if (balls[i].timer == 0) {
+				balls[i].y += 2;
+			}
+			if (balls[i].y > balls[i].destY) {
+				balls[i].timer++;
+				if (balls[i].timer > 100) {
+					balls[i].used = false;
+				}
+			}
+		}
+	}
+}
 
 void updateGame() {
 	for (int i = 0; i < 3; i++) {
@@ -148,6 +213,8 @@ void updateGame() {
 			}
 		}
 	}
+	createSunshine();//创建阳光
+	updateSunshine();//更新阳光
 }
 
 void startUI() {
