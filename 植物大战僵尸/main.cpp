@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <graphics.h>
 #include <time.h>
+#include <mmsystem.h>
+#pragma comment (lib,"winmm.lib")
 #include "tools.h"
 
 #define WIN_WIDTH 900
@@ -30,6 +32,7 @@ struct sunshineBall {
 };
 struct sunshineBall balls[10];
 IMAGE imgSunshineBall[29];
+int sunshine;
 
 struct zhiwu map[3][9];
 
@@ -70,6 +73,7 @@ void gameInit() {
 		}
 	}
 	curZhiWu = 0;
+	sunshine = 50;
 
 	//加载阳光
 	memset(balls, 0, sizeof(balls));
@@ -83,6 +87,17 @@ void gameInit() {
 
 	//创建游戏窗口
 	initgraph(WIN_WIDTH, WIN_HEIGHT, 1);
+
+	//设置字体
+	LOGFONT f;
+	gettextstyle(&f);
+	f.lfHeight = 30;
+	f.lfWeight = 15;
+	strcpy(f.lfFaceName, "Segoe UI Block");
+	f.lfQuality = ANTIALIASED_QUALITY;//抗锯齿
+	settextstyle(&f);
+	setbkmode(TRANSPARENT);//设置透明字体背景
+	setcolor(BLACK);
 }
 
 void updateWindow() {
@@ -125,7 +140,28 @@ void updateWindow() {
 		}
 	}
 
+	char scoreText[8];
+	sprintf_s(scoreText, sizeof(scoreText), "%d", sunshine);
+	outtextxy(278, 67, scoreText);//输出阳光值
+
 	EndBatchDraw();
+}
+
+void collectSunshine(ExMessage* msg) {
+	int count = sizeof(balls) / sizeof(balls[0]);
+	int w = imgSunshineBall[0].getwidth();
+	int h = imgSunshineBall[0].getheight();
+	for (int i = 0; i < count; i++) {
+		if (balls[i].used) {
+			int x = balls[i].x;
+			int y = balls[i].y;
+			if (msg->x > x && msg->x < x + w && msg->y>y && msg->y < y + h) {
+				balls[i].used = false;
+				sunshine += 25;
+				mciSendString("play res/res/sunshine.mp3", 0, 0, 0);
+			}
+		}
+	}
 }
 
 void userClick() {
@@ -137,6 +173,9 @@ void userClick() {
 				int index = (msg.x - 338) / 65;
 				status = 1;
 				curZhiWu = index + 1;
+			}
+			else {
+				collectSunshine(&msg);
 			}
 		}
 		else if (msg.message == WM_MOUSEMOVE && status == 1) {
