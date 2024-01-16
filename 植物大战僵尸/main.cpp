@@ -34,6 +34,15 @@ struct sunshineBall balls[10];
 IMAGE imgSunshineBall[29];
 int sunshine;
 
+struct zm {
+	int x, y;
+	int frameIndex;
+	bool used;
+	int speed;
+};
+struct zm zms[10];
+IMAGE imgZM[22];
+
 struct zhiwu map[3][9];
 
 bool fileExist(const char* name) {
@@ -98,6 +107,23 @@ void gameInit() {
 	settextstyle(&f);
 	setbkmode(TRANSPARENT);//设置透明字体背景
 	setcolor(BLACK);
+
+	//初始化僵尸数据
+	memset(zms, 0, sizeof(zms));
+	for (int i = 0; i < 22; i++) {
+		sprintf_s(name, sizeof(name), "res/res/zm/%d.png", i + 1);
+		loadimage(&imgZM[i], name);
+	}
+}
+
+void drawZM() {
+	int zmCount = sizeof(zms) / sizeof(zms[0]);
+	for (int i = 0; i < zmCount; i++) {
+		if (zms[i].used) {
+			IMAGE* img = &imgZM[zms[i].frameIndex];
+			putimagePNG(zms[i].x, zms[i].y - img->getheight(), img);
+		}
+	}
 }
 
 void updateWindow() {
@@ -143,6 +169,8 @@ void updateWindow() {
 	char scoreText[8];
 	sprintf_s(scoreText, sizeof(scoreText), "%d", sunshine);
 	outtextxy(278, 67, scoreText);//输出阳光值
+
+	drawZM();
 
 	EndBatchDraw();
 }
@@ -239,6 +267,41 @@ void updateSunshine() {
 	}
 }
 
+void createZM() {
+	static int zmFre = 500;
+	static int count = 0;
+	count++;
+	if (count > zmFre) {
+		count = 0;
+		zmFre = rand() % 200 + 300;
+		int i;
+		int zmMax = sizeof(zms) / sizeof(zms[0]);
+		for (i = 0; i < zmMax && zms[i].used; i++);
+		if (i < zmMax) {
+			zms[i].used = true;
+			zms[i].x = WIN_WIDTH;
+			zms[i].y = 172 + (1 + rand() % 3) * 100;
+			zms[i].speed = 1;
+		}
+	}
+	
+}
+
+void updateZM(){
+	int zmMax = sizeof(zms) / sizeof(zms[0]);
+	//更新僵尸的位置
+	for (int i = 0; i < zmMax; i++) {
+		if (zms[i].used) {
+			zms[i].x -= zms[i].speed;
+			if (zms[i].x < 170) {
+				printf("GAME OVER\n");
+				MessageBox(NULL, "over", "over", 0);//待优化
+				exit(0);//待优化
+			}
+		}
+	}
+}
+
 void updateGame() {
 	for (int i = 0; i < 3; i++) {
 		for (int j = 0; j < 9; j++) {
@@ -254,6 +317,9 @@ void updateGame() {
 	}
 	createSunshine();//创建阳光
 	updateSunshine();//更新阳光
+
+	createZM();//创建僵尸
+	updateZM();//更新僵尸
 }
 
 void startUI() {
