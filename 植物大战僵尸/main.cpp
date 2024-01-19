@@ -2,6 +2,7 @@
 #include <graphics.h>
 #include <time.h>
 #include <mmsystem.h>
+#include <math.h>
 #pragma comment (lib,"winmm.lib")
 #include "tools.h"
 
@@ -29,6 +30,8 @@ struct sunshineBall {
 	int destY;//目标Y坐标
 	bool used;
 	int timer;
+	float xoff;
+	float yoff;
 };
 struct sunshineBall balls[10];
 IMAGE imgSunshineBall[29];
@@ -160,7 +163,7 @@ void updateWindow() {
 
 	int ballMax = sizeof(balls) / sizeof(balls[0]);
 	for (int i = 0; i < ballMax; i++) {
-		if (balls[i].used) {
+		if (balls[i].used||balls[i].xoff) {
 			IMAGE* img = &imgSunshineBall[balls[i].frameIndex];
 			putimagePNG(balls[i].x, balls[i].y, img);
 		}
@@ -185,8 +188,14 @@ void collectSunshine(ExMessage* msg) {
 			int y = balls[i].y;
 			if (msg->x > x && msg->x < x + w && msg->y>y && msg->y < y + h) {
 				balls[i].used = false;
-				sunshine += 25;
+				//sunshine += 25;
 				mciSendString("play res/res/sunshine.mp3", 0, 0, 0);
+				//阳光的偏移量
+				float destY = 0;
+				float destX = 262;
+				float angle = atan(y - destY) / (x - destX);
+				balls[i].xoff = 4 * cos(angle);
+				balls[i].yoff = 4 * sin(angle);
 			}
 		}
 	}
@@ -245,6 +254,8 @@ void createSunshine() {
 		balls[i].y = 60;
 		balls[i].destY = 200 + (rand() % 4) * 90;
 		balls[i].timer = 0;
+		balls[i].xoff = 0;
+		balls[i].yoff = 0;
 	}
 
 }
@@ -262,6 +273,22 @@ void updateSunshine() {
 				if (balls[i].timer > 100) {
 					balls[i].used = false;
 				}
+			}
+		}
+		else if (balls[i].xoff) {
+			//阳光的偏移量
+			float destY = 0;
+			float destX = 262;
+			float angle = atan(balls[i].y - destY) / (balls[i].x - destX);
+			balls[i].xoff = 4 * cos(angle);
+			balls[i].yoff = 4 * sin(angle);
+
+			balls[i].x -= balls[i].xoff;
+			balls[i].y -= balls[i].yoff;
+			if (balls[i].y < 0 || balls[i].x < 262) {
+				balls[i].xoff = 0;
+				balls[i].yoff = 0;
+				sunshine += 25;
 			}
 		}
 	}
