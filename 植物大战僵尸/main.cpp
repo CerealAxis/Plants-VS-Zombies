@@ -268,7 +268,7 @@ void updateSunshine() {
 }
 
 void createZM() {
-	static int zmFre = 500;
+	static int zmFre = 200;
 	static int count = 0;
 	count++;
 	if (count > zmFre) {
@@ -306,9 +306,14 @@ void updateZM(){
 			}
 		}
 	}
-	for (int i = 0; i < zmMax; i++) {
-		if (zms[i].used) {
-			zms[i].frameIndex = (zms[i].frameIndex + 1) % 22;
+	static int count2=0;
+	count2++;
+	if (count2 > 4) {
+		count2 = 0;
+		for (int i = 0; i < zmMax; i++) {
+			if (zms[i].used) {
+				zms[i].frameIndex = (zms[i].frameIndex + 1) % 22;
+			}
 		}
 	}
 }
