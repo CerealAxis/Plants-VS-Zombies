@@ -42,9 +42,20 @@ struct zm {
 	int frameIndex;
 	bool used;
 	int speed;
+	int row;
 };
 struct zm zms[10];
 IMAGE imgZM[22];
+
+//子弹的数据类型
+struct bullet {
+	int x, y;
+	int row;
+	bool used;
+	int speed;
+};
+struct bullet bullets[30];
+IMAGE imgBulletNormal;
 
 struct zhiwu map[3][9];
 
@@ -117,6 +128,10 @@ void gameInit() {
 		sprintf_s(name, sizeof(name), "res/res/zm/%d.png", i + 1);
 		loadimage(&imgZM[i], name);
 	}
+
+	//初始化子弹
+	loadimage(&imgBulletNormal, "res/res/bullets/bullet_normal.png");
+	memset(bullets, 0, sizeof(bullets));
 }
 
 void drawZM() {
@@ -174,6 +189,14 @@ void updateWindow() {
 	outtextxy(278, 67, scoreText);//输出阳光值
 
 	drawZM();
+
+	//渲染子弹
+	int bulletMax = sizeof(bullets) / sizeof(bullets[0]);
+	for (int i = 0; i < bulletMax; i++) {
+		if (bullets[i].used) {
+			putimagePNG(bullets[i].x, bullets[i].y, &imgBulletNormal);
+		}
+	}
 
 	EndBatchDraw();
 }
@@ -307,7 +330,8 @@ void createZM() {
 		if (i < zmMax) {
 			zms[i].used = true;
 			zms[i].x = WIN_WIDTH;
-			zms[i].y = 172 + (1 + rand() % 3) * 100;
+			zms[i].row = rand() % 3;
+			zms[i].y = 172 + (1 + zms[i].row) * 100;
 			zms[i].speed = 1;
 		}
 	}
@@ -345,6 +369,54 @@ void updateZM(){
 	}
 }
 
+void shoot() {
+	int lines[3] = { 0 };
+	int zmCount = sizeof(zms) / sizeof(zms[0]);
+	int dangerX = WIN_WIDTH - imgZM[0].getwidth();
+	int bulletMax = sizeof(bullets) / sizeof(bullets[0]);
+	for (int i = 0; i < zmCount; i++) {
+		if (zms[i].used && zms[i].x < dangerX) {
+			lines[zms[i].row] = 1;
+		}
+	}
+
+	for (int i = 0; i < 3; i++) {
+		for (int j = 0; j < 9; j++) {
+			if (map[i][j].type == WAN_DOU + 1 && lines[i]) {
+				static int count = 0;
+				count++;
+				if (count > 20) {
+					count = 0;
+					int k;
+					for (k = 0; k < bulletMax && bullets[k].used; k++);
+					if (k < bulletMax) {
+						bullets[k].used = true;
+						bullets[k].row = i;
+						bullets[k].speed = 6;
+
+						int zwX = 256 + j * 81;
+						int zwY = 179 + i * 102 + 14;
+						bullets[k].x = zwX + imgZhiWu[map[i][j].type - 1][0]->getwidth()-10;
+						bullets[k].y = zwY + 5;
+					}
+				}
+			}
+		}
+	}
+}
+
+void updateBullets() {
+	int countMax = sizeof(bullets) / sizeof(bullets[0]);
+	for (int i = 0; i < countMax; i++) {
+		if (bullets[i].used) {
+			bullets[i].x += bullets[i].speed;
+			if (bullets[i].x > WIN_WIDTH) {
+				bullets[i].used = false;
+			}
+		}
+	}
+}
+
 void updateGame() {
 	for (int i = 0; i < 3; i++) {
 		for (int j = 0; j < 9; j++) {
@@ -363,6 +435,9 @@ void updateGame() {
 
 	createZM();//创建僵尸
 	updateZM();//更新僵尸
+
+	shoot();//发射豌豆子弹
+	updateBullets();//更新豌豆子弹
 }
 
 void startUI() {
